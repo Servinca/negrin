@@ -2,8 +2,10 @@
 <html lang="es">
 <head>
     <script>
-    // Si no tiene la llave de sesión, lo devolvemos al Login
+    // 1. Revisamos si la llave de sesión existe en el navegador
     if (localStorage.getItem('sesion_activa') !== 'true') {
+        // 2. Si no existe, lo mandamos directo al login (index.html)
+        // Usamos replace para que el usuario no pueda darle "atrás" en el navegador y entrar
         window.location.replace('index.html');
     }
 </script>
