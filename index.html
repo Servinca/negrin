@@ -275,8 +275,13 @@
                 errorText.innerText = 'Hubo un error de conexión con la base de datos.';
                 errorBox.style.display = 'block';
             } else if (data && data.length > 0) {
+                
+                // --- ¡AQUÍ ESTÁ LA MAGIA! CREAMOS LA LLAVE DE SESIÓN ---
+                localStorage.setItem('sesion_activa', 'true'); 
+                
                 // Si la consulta devuelve al menos una fila, los datos son correctos
-                window.location.href = 'directorio.html'; // Cambia index.html por el nombre de tu directorio si es distinto
+                window.location.href = 'directorio.html'; 
+                
             } else {
                 // Si la consulta devuelve un array vacío (length 0), los datos están mal
                 errorText.innerText = 'Usuario o contraseña incorrectos. Verifica tus datos.';
