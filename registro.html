@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>
+    // 1. Revisamos si la llave de sesión existe en el navegador
+    if (localStorage.getItem('sesion_activa') !== 'true') {
+        // 2. Si no existe, lo mandamos directo al login (index.html)
+        // Usamos replace para que el usuario no pueda darle "atrás" en el navegador y entrar
+        window.location.replace('index.html');
+    }
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Empresas - Servinca</title>
