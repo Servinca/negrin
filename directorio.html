@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+    // Si no tiene la llave de sesión, lo devolvemos al Login
+    if (localStorage.getItem('sesion_activa') !== 'true') {
+        window.location.replace('index.html');
+    }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directorio Empresarial Animado - Servinca</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ============================== */
+        /* --- Reset y Estilos Base --- */
+        /* ============================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f5f7fa; 
+            color: #111827;
+            padding: 40px 20px;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; font-weight: 700; }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* ============================== */
+        /* --- Encabezado y Controles --- */
+        /* ============================== */
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #f1f5f9;
+        }
+        
+        /* Un elemento decorativo de fondo sutil */
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 160px;
+            height: 160px;
+            background: rgba(59, 130, 246, 0.08);
+            border-radius: 50%;
+        }
+
+        .header-section h1 {
+            font-size: 38px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #1e3a8a, #2563eb);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header-section p {
+            color: #6b7280;
+            font-size: 17px;
+            margin-bottom: 40px;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Panel unificado para controles */
+        .controls-panel {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 18px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 18px 20px 18px 55px;
+            font-size: 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            background: #ffffff;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* --- Botones de Filtro Estilizados --- */
+        .filtros-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 10px 22px;
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+            color: #4b5563;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .filter-btn:hover {
+            background-color: #f1f5f9;
+            color: #111827;
+            border-color: #cbd5e1;
+        }
+        .filter-btn.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* --- Botón de Agregar (Principal) --- */
+        .header-actions { margin-top: 30px; display: flex; justify-content: center; }
+        .btn-agregar {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(90deg, #1e3a8a, #2563eb);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+        }
+        .btn-agregar:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+            background: linear-gradient(90deg, #1d4ed8, #2563eb);
+        }
+
+        /* ============================== */
+        /* --- Grid y Tarjetas --- */
+        /* ============================== */
+        .grid-empresas {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+        
+        .empresa-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid #f1f5f9;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeInCard 0.5s ease forwards;
+        }
+        @keyframes fadeInCard {
+            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(20px); }
+        }
+        
+        .empresa-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+            border-color: #3b82f6;
+        }
+        /* Decorativo sutil en hover */
+        .empresa-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .empresa-card:hover::after { transform: scaleX(1); }
+
+        /* --- Contenido de la Tarjeta Estilizado --- */
+        .card-header {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .card-title {
+            font-size: 21px;
+            color: #111827;
+            margin-bottom: 6px;
+            line-height: 1.2;
+            letter-spacing: -0.3px;
+        }
+        .card-desc {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 20px;
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        /* --- Badges/Etiquetas Refinadas --- */
+        .badge {
+            padding: 7px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .badge.fabricante { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .badge.distribuidora { background-color: #fef3c7; color: #a16207; border: 1px solid #fde68a; }
+        .badge.ventas { background-color: #dcfce3; color: #15803d; border: 1px solid #bbf7d0; }
+
+        /* --- Detalles de Contacto con Iconos Normalizados --- */
+        .card-details {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 25px;
+            margin-top: auto;
+        }
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        .detail-item i {
+            color: #3b82f6;
+            width: 22px;
+            text-align: center;
+            font-size: 17px;
+        }
+        .detail-item strong { color: #1f2937; margin-right: 5px; }
+
+        /* --- Botones de Acción Estilizados (Editar/Eliminar) --- */
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+        }
+        .btn-edit { background-color: #f0f9ff; color: #0284c7; }
+        .btn-edit:hover { background-color: #e0f2fe; }
+        .btn-delete { background-color: #fef2f2; color: #dc2626; }
+        .btn-delete:hover { background-color: #fee2e2; }
+
+        /* ============================== */
+        /* --- Estados Vacíos y Carga --- */
+        /* ============================== */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 90px 40px;
+            background: #ffffff;
+            border-radius: 16px;
+            color: #6b7280;
+            border: 2px dashed #e2e8f0;
+        }
+        .empty-state i {
+            font-size: 70px;
+            color: #e2e8f0;
+            margin-bottom: 25px;
+        }
+
+        /* --- Skeleton Screen Mejorado --- */
+        .skeleton {
+            background: #e2e8f0;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            animation: skeletonLoad 1.6s infinite;
+        }
+        @keyframes skeletonLoad { 100% { transform: translateX(100%); } }
+        .skeleton-title { height: 26px; width: 70%; margin-bottom: 12px; }
+        .skeleton-text { height: 16px; width: 100%; margin-bottom: 8px; }
+        .skeleton-line { height: 16px; width: 90%; margin-bottom: 12px; }
+
+        /* Adaptabilidad para móviles */
+        @media (max-width: 650px) {
+            .header-section { padding: 35px 20px; }
+            .header-section h1 { font-size: 30px; }
+            .controls-panel { padding: 20px 15px; }
+            .filtros-container { gap: 8px; }
+            .filter-btn { padding: 8px 18px; font-size: 13px; }
+            .grid-empresas { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-section">
+            <h1>Directorio de Operaciones</h1>
+            <p>Un sistema inteligente y visual para gestionar y localizar los registros empresariales clave.</p>
+            
+            <div class="controls-panel">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="buscador" class="search-box" placeholder="Ej: Corporación XYZ, Cabimas, soldadura...">
+                </div>
+
+                <div class="filtros-container">
+                    <button class="filter-btn active" data-tipo="Todos">Todos</button>
+                    <button class="filter-btn" data-tipo="Fabricante"><i class="fas fa-industry"></i> Fabricantes</button>
+                    <button class="filter-btn" data-tipo="Distribuidora"><i class="fas fa-truck-moving"></i> Distribuidoras</button>
+                    <button class="filter-btn" data-tipo="Ventas"><i class="fas fa-store"></i> Ventas</button>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <a href="registro.html" class="btn-agregar">
+                    <i class="fas fa-plus-circle"></i> Registrar Nueva Empresa
+                </a>
+            </div>
+        </div>
+        
+        <div class="grid-empresas" id="gridEmpresas">
+            <div class="empresa-card">
+                <div class="card-header">
+                    <div>
+                        <div class="skeleton skeleton-title"></div>
+                        <div class="detail-item"><div class="skeleton-text" style="width:50%"></div></div>
+                    </div>
+                </div>
+                <div class="card-desc skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="card-details">
+                    <div class="detail-item"><div class="skeleton skeleton-line"></div></div>
+                </div>
+            </div>
+            <div class="empresa-card">
+                <div class="card-header">
+                    <div>
+                        <div class="skeleton skeleton-title"></div>
+                    </div>
+                </div>
+                <div class="card-desc skeleton-line"></div>
+                <div class="card-details">
+                    <div class="detail-item"><div class="skeleton skeleton-line"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Inicializar Supabase (¡Recuerda cambiar estos datos por los tuyos si son distintos!)
+        const supabaseUrl = 'https://siifkwdmyjycvxaakeqe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWZrd2RteWp5Y3Z4YWFrZXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODIyOTIsImV4cCI6MjA5MDQ1ODI5Mn0.uxXL_1BZv0XNC4tqX-lnxYy7VLzwF0qOgJIio08JpOc';
+        
+        // Usamos supabase.createClient y lo guardamos en la variable "cliente"
+        const cliente = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Array para guardar los datos en memoria
+        let baseDeDatosEmpresas = [];
+
+        // Elementos del DOM
+        const grid = document.getElementById('gridEmpresas');
+        const buscador = document.getElementById('buscador');
+
+        // 2. Función para obtener los datos desde Supabase
+        async function cargarEmpresas() {
+            const { data, error } = await cliente
+                .from('empresas')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error al cargar:', error);
+                grid.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Error al cargar</h3><p>No pudimos conectarnos a la base de datos. Asegúrate de haber desactivado el RLS en Supabase.</p></div>';
+                return;
+            }
+
+            baseDeDatosEmpresas = data;
+            aplicarFiltros(); // Pintar la tabla por primera vez
+        }
+
+        // 3. Función para pintar las tarjetas (cards)
+        function renderizarGrid(empresas) {
+            grid.innerHTML = ''; 
+
+            if (empresas.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><h3>No hay resultados</h3><p>No encontramos empresas que coincidan con tu búsqueda y filtros.</p></div>';
+                return;
+            }
+
+            empresas.forEach((emp, index) => {
+                // Definir el badge y color por tipo
+                const claseBadge = emp.tipo ? emp.tipo.toLowerCase() : '';
+                let iconoBadge = '';
+                if (emp.tipo === 'Fabricante') iconoBadge = '<i class="fas fa-industry"></i>';
+                else if (emp.tipo === 'Distribuidora') iconoBadge = '<i class="fas fa-truck-moving"></i>';
+                else if (emp.tipo === 'Ventas') iconoBadge = '<i class="fas fa-store"></i>';
+
+                const card = document.createElement('div');
+                card.className = 'empresa-card';
+                // Animación en cascada suave
+                card.style.animationDelay = `${index * 60}ms`;
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">${emp.nombre}</h3>
+                            <div class="detail-item"><i class="fas fa-map-marker-alt"></i> ${emp.ubicacion || '-'}</div>
+                        </div>
+                        <span class="badge ${claseBadge}">${iconoBadge} ${emp.tipo || '-'}</span>
+                    </div>
+                    
+                    <p class="card-desc">${emp.descripcion || 'Sin descripción adicional disponible.'}</p>
+                    
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <i class="fas fa-compass"></i>
+                            <div><strong>Dirección:</strong> ${emp.direccion || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <div><strong>Correo:</strong> ${emp.correo || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone-alt"></i>
+                            <div><strong>Teléfono:</strong> ${emp.telefono || '-'}</div>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <a href="editar.html?id=${emp.id}" class="action-btn btn-edit">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <button onclick="eliminarEmpresa(${emp.id}, '${emp.nombre}')" class="action-btn btn-delete">
+                            <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // --- Función para Eliminar Empresa ---
+        async function eliminarEmpresa(id, nombre) {
+            if(confirm(`¿Estás completamente seguro de que deseas eliminar permanentemente a "${nombre}"? Esta acción no se puede deshacer.`)) {
+                
+                const { error } = await cliente
+                    .from('empresas')
+                    .delete()
+                    .eq('id', id);
+                
+                if(error) {
+                    alert('Hubo un error al intentar eliminar la empresa: ' + error.message);
+                } else {
+                    // Actualizamos nuestro array local y repintamos para que desaparezca al instante
+                    baseDeDatosEmpresas = baseDeDatosEmpresas.filter(emp => emp.id !== id);
+                    aplicarFiltros();
+                }
+            }
+        }
+
+        // 4. Lógica de Búsqueda y Filtros Combinados Mejorada
+        let textoBusquedaActual = '';
+        let filtroTipoActual = 'Todos';
+
+        function aplicarFiltros() {
+            const resultados = baseDeDatosEmpresas.filter(emp => {
+                // Filtro por texto: ahora busca en descripción también.
+                const coincideNombre = emp.nombre.toLowerCase().includes(textoBusquedaActual);
+                const coincideTipo = emp.tipo && emp.tipo.toLowerCase().includes(textoBusquedaActual);
+                const coincideUbicacion = emp.ubicacion && emp.ubicacion.toLowerCase().includes(textoBusquedaActual);
+                const coincideDescripcion = emp.descripcion && emp.descripcion.toLowerCase().includes(textoBusquedaActual);
+                
+                const pasaFiltroTexto = coincideNombre || coincideTipo || coincideUbicacion || coincideDescripcion;
+
+                // Filtro por botón de categoría
+                const pasaFiltroTipo = (filtroTipoActual === 'Todos') || (emp.tipo === filtroTipoActual);
+
+                // Solo pasa la empresa si cumple ambas condiciones
+                return pasaFiltroTexto && pasaFiltroTipo;
+            });
+
+            renderizarGrid(resultados);
+        }
+
+        // Evento 1: Escribir en la barra de búsqueda (con debounce para no sobrecargar)
+        let searchTimeout;
+        buscador.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                textoBusquedaActual = e.target.value.toLowerCase();
+                aplicarFiltros(); 
+            }, 250); 
+        });
+
+        // Evento 2: Clic en los botones de filtro
+        const botonesFiltro = document.querySelectorAll('.filter-btn');
+        botonesFiltro.forEach(boton => {
+            boton.addEventListener('click', (e) => {
+                // Quitar color azul a todos y ponérselo al presionado
+                botonesFiltro.forEach(b => b.classList.remove('active'));
+                
+                // Si hizo clic en el ícono, buscamos el padre <button>
+                let botonPresionado = e.target.closest('.filter-btn');
+                botonPresionado.classList.add('active');
+                
+                // Actualizar la variable y filtrar
+                filtroTipoActual = botonPresionado.getAttribute('data-tipo');
+                aplicarFiltros(); 
+            });
+        });
+
+        // 5. Iniciar la carga de datos
+        cargarEmpresas();
+    </script>
+</body>
+</html>
