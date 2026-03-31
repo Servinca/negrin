@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+        if (localStorage.getItem('sesion_activa') !== 'true') {
+            window.location.replace('index.html');
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Cliente - Servinca</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ============================== */
+        /* --- Estilos Base Verdes --- */
+        /* ============================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #f0fdf4; color: #111827; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 40px 20px; line-height: 1.5; }
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; font-weight: 700; }
+
+        .form-container {
+            background: #ffffff; padding: 50px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            border: 1px solid #dcfce3; width: 100%; max-width: 750px; position: relative; overflow: hidden;
+        }
+
+        .form-container::before {
+            content: ''; position: absolute; top: -60px; right: -60px; width: 160px; height: 160px;
+            background: rgba(16, 185, 129, 0.05); border-radius: 50%; pointer-events: none;
+        }
+
+        .btn-volver {
+            display: inline-flex; align-items: center; gap: 8px; color: #64748b; text-decoration: none;
+            font-size: 14px; font-weight: 600; margin-bottom: 25px; transition: all 0.3s ease; position: relative; z-index: 2;
+        }
+        .btn-volver i { transition: transform 0.3s ease; }
+        .btn-volver:hover { color: #059669; }
+        .btn-volver:hover i { transform: translateX(-4px); }
+
+        .form-header { text-align: center; margin-bottom: 40px; position: relative; z-index: 2; }
+        .form-header h2 { font-size: 32px; margin-bottom: 10px; background: linear-gradient(90deg, #065f46, #10b981); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+        .form-header p { color: #6b7280; font-size: 16px; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; position: relative; z-index: 2; }
+        .form-group { display: flex; flex-direction: column; }
+        .full-width { grid-column: 1 / -1; }
+
+        label { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 10px; letter-spacing: 0.3px; }
+
+        input, select, textarea {
+            width: 100%; padding: 14px 18px; border: 1px solid #d1d5db; border-radius: 12px;
+            font-size: 15px; font-family: 'Inter', sans-serif; color: #1f2937; background-color: #f9fafb; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        input::placeholder, select::placeholder, textarea::placeholder { color: #94a3b8; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #10b981; background-color: #ffffff; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); transform: translateY(-1px); }
+        input:not(:placeholder-shown):invalid { border-color: #ef4444; background-color: #fef2f2; }
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+        button {
+            width: 100%; padding: 16px; background: linear-gradient(90deg, #059669, #10b981); color: white;
+            border: none; border-radius: 50px; font-size: 16px; font-family: 'Inter', sans-serif; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+        }
+        button:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35); background: linear-gradient(90deg, #047857, #059669); }
+        button:active:not(:disabled) { transform: translateY(0); }
+        button:disabled { background: #a7f3d0; box-shadow: none; cursor: not-allowed; transform: none; }
+
+        /* Pantalla de carga superpuesta */
+        #loadingOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9);
+            border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-size: 18px; font-weight: 600; color: #059669; z-index: 10;
+        }
+
+        @media (max-width: 650px) {
+            .form-container { padding: 40px 25px; } .form-grid { grid-template-columns: 1fr; gap: 20px; } .form-header h2 { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        
+        <div id="loadingOverlay">
+            <i class="fas fa-spinner fa-spin" style="font-size: 30px; margin-bottom: 15px;"></i> 
+            Cargando datos del cliente...
+        </div>
+
+        <a href="clientes.html" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Clientes
+        </a>
+
+        <div class="form-header">
+            <h2>Modificar Cliente</h2>
+            <p>Actualiza la información de este cliente en el sistema.</p>
+        </div>
+        
+        <form id="editClienteForm" class="form-grid">
+            
+            <div class="form-group full-width">
+                <label for="nombre">Nombre Completo / Razón Social</label>
+                <input type="text" id="nombre" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="tipo">Tipo de Cliente</label>
+                <select id="tipo" required>
+                    <option value="" disabled>Seleccione...</option>
+                    <option value="Persona Natural">Persona Natural</option>
+                    <option value="Persona Jurídica">Persona Jurídica</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ubicacion">Ubicación (Ciudad/Estado)</label>
+                <input type="text" id="ubicacion" required>
+            </div>
+            
+            <div class="form-group full-width">
+                <label for="direccion">Dirección Física Exacta</label>
+                <input type="text" id="direccion" required>
+            </div>
+
+            <div class="form-group">
+                <label for="correo">Correo Electrónico</label>
+                <input type="email" id="correo" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telefono">Número Telefónico</label>
+                <input type="tel" id="telefono" pattern="[\+0-9\s\-]+" required>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="otro">Otro (Dato Adicional)</label>
+                <input type="text" id="otro" required>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="descripcion">Descripción / Notas Adicionales (Opcional)</label>
+                <textarea id="descripcion"></textarea>
+            </div>
+            
+            <div class="form-group full-width">
+                <button type="submit" id="btnSubmit">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+            
+        </form>
+    </div>
+
+    <script>
+        // 1. Inicializar Supabase (Pon tu key aquí)
+        const supabaseUrl = 'https://siifkwdmyjycvxaakeqe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWZrd2RteWp5Y3Z4YWFrZXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODIyOTIsImV4cCI6MjA5MDQ1ODI5Mn0.uxXL_1BZv0XNC4tqX-lnxYy7VLzwF0qOgJIio08JpOc';
+        const clienteSupabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. Obtener el ID del cliente desde la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const clienteId = urlParams.get('id');
+
+        // 3. Cargar los datos actuales del cliente
+        async function cargarDatosCliente() {
+            if (!clienteId) {
+                alert('No se especificó ningún cliente para editar.');
+                window.location.href = 'clientes.html';
+                return;
+            }
+
+            const { data, error } = await clienteSupabase
+                .from('clientes')
+                .select('*')
+                .eq('id', clienteId)
+                .single(); 
+
+            if (error) {
+                alert('Error al obtener los datos del cliente: ' + error.message);
+                window.location.href = 'clientes.html';
+                return;
+            }
+
+            // Rellenar los inputs
+            document.getElementById('nombre').value = data.nombre;
+            document.getElementById('tipo').value = data.tipo;
+            document.getElementById('ubicacion').value = data.ubicacion || '';
+            document.getElementById('direccion').value = data.direccion || '';
+            document.getElementById('correo').value = data.correo || '';
+            document.getElementById('telefono').value = data.telefono || '';
+            document.getElementById('otro').value = data.otro || '';
+            document.getElementById('descripcion').value = data.descripcion || '';
+
+            // Quitar la pantalla de carga visual
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // 4. Lógica para guardar las modificaciones (Update)
+        document.getElementById('editClienteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const btnSubmit = document.getElementById('btnSubmit');
+            const textoOriginal = btnSubmit.innerHTML;
+            
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando cambios...';
+            btnSubmit.disabled = true;
+
+            const datosActualizados = {
+                nombre: document.getElementById('nombre').value,
+                tipo: document.getElementById('tipo').value,
+                ubicacion: document.getElementById('ubicacion').value,
+                direccion: document.getElementById('direccion').value,
+                correo: document.getElementById('correo').value,
+                telefono: document.getElementById('telefono').value,
+                otro: document.getElementById('otro').value,
+                descripcion: document.getElementById('descripcion').value
+            };
+
+            const { error } = await clienteSupabase
+                .from('clientes')
+                .update(datosActualizados)
+                .eq('id', clienteId);
+
+            btnSubmit.innerHTML = textoOriginal;
+            btnSubmit.disabled = false;
+
+            if (error) {
+                alert('Hubo un error al guardar los cambios: ' + error.message);
+            } else {
+                alert('¡Datos actualizados con éxito!');
+                window.location.href = 'clientes.html'; // Devolvemos al directorio
+            }
+        });
+
+        // Ejecutar carga al abrir la pantalla
+        cargarDatosCliente();
+    </script>
+</body>
+</html>

@@ -8,7 +8,7 @@
         // Usamos replace para que el usuario no pueda darle "atrás" en el navegador y entrar
         window.location.replace('index.html');
     }
-</script>
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Directorio Empresarial Animado - Servinca</title>
@@ -34,6 +34,27 @@
         h1, h2, h3 { font-family: 'Poppins', sans-serif; font-weight: 700; }
 
         .container { max-width: 1200px; margin: 0 auto; }
+
+        /* ============================== */
+        /* --- Barra de Navegación --- */
+        /* ============================== */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 15px 30px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px; border: 1px solid #e2e8f0;
+        }
+        .nav-links a {
+            text-decoration: none; font-weight: 600; font-size: 15px; margin-right: 25px;
+            color: #64748b; transition: color 0.3s;
+        }
+        .nav-links a:hover { color: #2563eb; } 
+        .nav-links a.active { color: #1d4ed8; border-bottom: 2px solid #1d4ed8; padding-bottom: 5px; }
+        
+        .btn-salir {
+            background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+            padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .btn-salir:hover { background: #fee2e2; }
 
         /* ============================== */
         /* --- Encabezado y Controles --- */
@@ -373,6 +394,15 @@
 <body>
 
     <div class="container">
+
+        <div class="navbar">
+            <div class="nav-links">
+                <a href="#" class="active"><i class="fas fa-building"></i> Directorio Empresas</a>
+                <a href="clientes.html"><i class="fas fa-users"></i> Directorio Clientes</a>
+            </div>
+            <button onclick="cerrarSesion()" class="btn-salir"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+
         <div class="header-section">
             <h1>Directorio de Operaciones</h1>
             <p>Un sistema inteligente y visual para gestionar y localizar los registros empresariales clave.</p>
@@ -380,7 +410,7 @@
             <div class="controls-panel">
                 <div class="search-container">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscador" class="search-box" placeholder="Ej: Corporación XYZ, Cabimas, soldadura...">
+                    <input type="text" id="buscador" class="search-box" >
                 </div>
 
                 <div class="filtros-container">
@@ -427,12 +457,18 @@
     </div>
 
     <script>
-        // 1. Inicializar Supabase (¡Recuerda cambiar estos datos por los tuyos si son distintos!)
+        // 1. Inicializar Supabase 
         const supabaseUrl = 'https://siifkwdmyjycvxaakeqe.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWZrd2RteWp5Y3Z4YWFrZXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODIyOTIsImV4cCI6MjA5MDQ1ODI5Mn0.uxXL_1BZv0XNC4tqX-lnxYy7VLzwF0qOgJIio08JpOc';
         
         // Usamos supabase.createClient y lo guardamos en la variable "cliente"
         const cliente = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- FUNCIÓN PARA CERRAR SESIÓN ---
+        function cerrarSesion() {
+            localStorage.removeItem('sesion_activa');
+            window.location.href = 'index.html';
+        }
 
         // Array para guardar los datos en memoria
         let baseDeDatosEmpresas = [];

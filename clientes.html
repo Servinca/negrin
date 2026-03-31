@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+        if (localStorage.getItem('sesion_activa') !== 'true') { window.location.replace('index.html'); }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes - Servinca</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ============================== */
+        /* --- Estilos Base y Verdes --- */
+        /* ============================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #f0fdf4; color: #111827; padding: 30px 20px; min-height: 100vh; line-height: 1.5; }
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .oculto { display: none !important; }
+
+        /* --- Barra de Navegación --- */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 15px 30px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px; border: 1px solid #dcfce3;
+        }
+        .nav-links a { text-decoration: none; font-weight: 600; font-size: 15px; margin-right: 25px; color: #64748b; transition: color 0.3s; }
+        .nav-links a:hover { color: #10b981; }
+        .nav-links a.active { color: #059669; border-bottom: 2px solid #059669; padding-bottom: 5px; }
+        .btn-salir { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-salir:hover { background: #fee2e2; }
+
+        /* --- VISTA 1: DIRECTORIO --- */
+        .header-section {
+            text-align: center; background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 40px; border: 1px solid #dcfce3;
+        }
+        .header-section h1 {
+            font-size: 34px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #065f46, #10b981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-section p { color: #6b7280; font-size: 16px; margin-bottom: 25px; }
+
+        /* --- Buscador con Lupita --- */
+        .search-container { 
+            position: relative; 
+            max-width: 500px; 
+            margin: 0 auto 25px auto; 
+        }
+        .search-icon { 
+            position: absolute; 
+            left: 20px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            color: #10b981; /* Lupita verde esmeralda */
+            font-size: 18px; 
+        }
+        .search-box { 
+            width: 100%; 
+            padding: 15px 20px 15px 50px; /* El 50px hace espacio para la lupa */
+            border: 1px solid #a7f3d0; 
+            border-radius: 50px; 
+            font-size: 15px; 
+            outline: none; 
+            transition: 0.3s; 
+        }
+        .search-box:focus { 
+            border-color: #10b981; 
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); 
+        }
+
+        .btn-verde {
+            display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px;
+            background: linear-gradient(90deg, #059669, #10b981); color: white;
+            border: none; border-radius: 50px; font-weight: 600; font-size: 15px;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-verde:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); }
+
+        /* ============================== */
+        /* --- Tarjetas Estilo Empresas pero Verdes --- */
+        /* ============================== */
+        .grid-clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+        
+        .card {
+            background: #ffffff; border-radius: 16px; padding: 35px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid #ecfdf5;
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+            opacity: 0; animation: fadeInCard 0.5s ease forwards;
+        }
+        @keyframes fadeInCard { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(20px); } }
+        
+        .card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.06); border-color: #10b981; }
+        
+        .card::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, #065f46, #10b981); transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        .card:hover::after { transform: scaleX(1); }
+
+        .card-header { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+        .card-title { font-size: 21px; color: #111827; margin-bottom: 6px; line-height: 1.2; letter-spacing: -0.3px; }
+        .card-desc { font-size: 14px; color: #4b5563; margin-bottom: 20px; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; }
+
+        .badge { padding: 7px 16px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+        /* Detalles de la tarjeta */
+        .card-details { border-top: 1px solid #ecfdf5; padding-top: 25px; margin-top: auto; }
+        .detail-item { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: 14px; color: #4b5563; }
+        .detail-item i { color: #10b981; width: 22px; text-align: center; font-size: 17px; } /* Iconos Verdes */
+        .detail-item strong { color: #1f2937; margin-right: 5px; }
+
+        /* Botones de acción */
+        .card-actions { display: flex; gap: 12px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #ecfdf5; }
+        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 7px; }
+        .btn-delete { background-color: #fef2f2; color: #dc2626; }
+        .btn-delete:hover { background-color: #fee2e2; }
+
+        /* --- Skeleton Screen --- */
+        .skeleton { background: #e2e8f0; border-radius: 8px; position: relative; overflow: hidden; }
+        .skeleton::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: translateX(-100%); background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); animation: skeletonLoad 1.6s infinite; }
+        @keyframes skeletonLoad { 100% { transform: translateX(100%); } }
+        .skeleton-title { height: 26px; width: 70%; margin-bottom: 12px; }
+        .skeleton-text { height: 16px; width: 100%; margin-bottom: 8px; }
+        .skeleton-line { height: 16px; width: 90%; margin-bottom: 12px; }
+
+        /* --- VISTA 2: FORMULARIO --- */
+        .form-container { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: 1px solid #dcfce3; max-width: 700px; margin: 0 auto; }
+        .btn-volver { display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-weight: 600; cursor: pointer; border: none; background: none; font-size: 15px; margin-bottom: 20px; }
+        .btn-volver:hover { color: #059669; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 1px solid #d1d5db; border-radius: 10px; font-family: 'Inter'; font-size: 14px; background: #f9fafb; outline: none; transition: 0.3s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #10b981; background: white; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+
+        input:not(:placeholder-shown):invalid { border-color: #ef4444; background-color: #fef2f2; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="navbar">
+            <div class="nav-links">
+                <a href="directorio.html"><i class="fas fa-building"></i> Directorio Empresas</a>
+                <a href="#" class="active"><i class="fas fa-users"></i> Directorio Clientes</a>
+            </div>
+            <button onclick="cerrarSesion()" class="btn-salir"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+
+        <div id="vista-listado">
+            <div class="header-section">
+                <h1>Cartera de Clientes</h1>
+                <p>Gestiona los datos de contacto, ubicación y otra información de los clientes.</p>
+                
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="buscador" class="search-box" placeholder="">
+                </div>
+                
+                <button onclick="mostrarFormulario()" class="btn-verde">
+                    <i class="fas fa-user-plus"></i> Registrar Nuevo Cliente
+                </button>
+            </div>
+
+            <div class="grid-clientes" id="gridClientes">
+                <div class="card">
+                    <div class="card-header">
+                        <div><div class="skeleton skeleton-title"></div><div class="detail-item"><div class="skeleton-text" style="width:50%"></div></div></div>
+                    </div>
+                    <div class="card-desc skeleton-line"></div>
+                    <div class="card-details"><div class="detail-item"><div class="skeleton skeleton-line"></div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="vista-formulario" class="oculto">
+            <div class="form-container">
+                <button onclick="mostrarListado()" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver al listado</button>
+                
+                <h2 style="color: #065f46; font-size: 28px; margin-bottom: 25px; text-align: center;">Registrar Cliente</h2>
+                
+                <form id="clienteForm" class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Nombre Completo / Razón Social *</label>
+                        <input type="text" id="nombre"  required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tipo de Cliente *</label>
+                        <select id="tipo" required>
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="Persona Natural">Persona Natural</option>
+                            <option value="Persona Jurídica">Persona Jurídica</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ubicación (Ciudad/Estado) *</label>
+                        <input type="text" id="ubicacion"  required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Dirección Física Exacta *</label>
+                        <input type="text" id="direccion"  required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" id="correo"  required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Número Telefónico *</label>
+                        <input type="tel" id="telefono"  pattern="[\+0-9\s\-]+" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Otro (Dato Adicional) *</label>
+                        <input type="text" id="otro"  required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Descripción / Notas Adicionales</label>
+                        <textarea id="descripcion" ></textarea>
+                    </div>
+                    
+                    <div class="form-group full-width" style="margin-top: 10px;">
+                        <button type="submit" id="btnSubmitForm" class="btn-verde" style="width: 100%; justify-content: center; padding: 16px;">
+                            <i class="fas fa-save"></i> Guardar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. Inicializar Supabase (Pon tus datos aquí)
+        const supabaseUrl = 'https://siifkwdmyjycvxaakeqe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWZrd2RteWp5Y3Z4YWFrZXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODIyOTIsImV4cCI6MjA5MDQ1ODI5Mn0.uxXL_1BZv0XNC4tqX-lnxYy7VLzwF0qOgJIio08JpOc';
+        const clienteSupabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let bdClientes = [];
+
+        // --- FUNCIONES VISUALES ---
+        function mostrarFormulario() {
+            document.getElementById('vista-listado').classList.add('oculto');
+            document.getElementById('vista-formulario').classList.remove('oculto');
+        }
+
+        function mostrarListado() {
+            document.getElementById('vista-formulario').classList.add('oculto');
+            document.getElementById('vista-listado').classList.remove('oculto');
+            document.getElementById('clienteForm').reset();
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('sesion_activa');
+            window.location.href = 'index.html';
+        }
+
+        // --- LÓGICA DE DATOS Y TARJETAS ---
+        async function cargarClientes() {
+            const { data, error } = await clienteSupabase.from('clientes').select('*').order('created_at', { ascending: false });
+            if (!error) {
+                bdClientes = data;
+                renderizarGrid(bdClientes);
+            } else {
+                console.error(error);
+            }
+        }
+
+        function renderizarGrid(clientes) {
+            const grid = document.getElementById('gridClientes');
+            grid.innerHTML = '';
+
+            if(clientes.length === 0) {
+                grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 60px; color: #6b7280; border: 2px dashed #a7f3d0; border-radius: 16px;"><i class="fas fa-user-times" style="font-size: 50px; color: #a7f3d0; margin-bottom: 15px;"></i><p>No hay clientes para mostrar.</p></div>';
+                return;
+            }
+
+            clientes.forEach((c, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.animationDelay = `${index * 60}ms`;
+
+                // Aquí construimos la tarjeta idéntica a la de empresas, pero en verde
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">${c.nombre}</h3>
+                            <div class="detail-item"><i class="fas fa-map-marker-alt"></i> ${c.ubicacion || '-'}</div>
+                        </div>
+                        <span class="badge"><i class="fas fa-user-tag"></i> ${c.tipo || '-'}</span>
+                    </div>
+                    
+                    <p class="card-desc">${c.descripcion || 'Sin descripción adicional disponible.'}</p>
+                    
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <i class="fas fa-compass"></i>
+                            <div><strong>Dirección:</strong> ${c.direccion || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <div><strong>Correo:</strong> ${c.correo || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-phone-alt"></i>
+                            <div><strong>Teléfono:</strong> ${c.telefono || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-info-circle"></i>
+                            <div><strong>Otro:</strong> ${c.otro || '-'}</div>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <a href="editar_cliente.html?id=${c.id}" class="action-btn" style="background-color: #ecfdf5; color: #059669;">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <button onclick="eliminarCliente(${c.id}, '${c.nombre}')" class="action-btn btn-delete">
+                            <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function eliminarCliente(id, nombre) {
+            if(confirm(`¿Estás seguro de que deseas eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) {
+                const { error } = await clienteSupabase.from('clientes').delete().eq('id', id);
+                if(error) alert('Error al eliminar');
+                else {
+                    bdClientes = bdClientes.filter(c => c.id !== id);
+                    renderizarGrid(bdClientes);
+                }
+            }
+        }
+
+        // --- BÚSQUEDA ---
+        document.getElementById('buscador').addEventListener('input', (e) => {
+            const texto = e.target.value.toLowerCase();
+            const filtrados = bdClientes.filter(c => {
+                return (c.nombre && c.nombre.toLowerCase().includes(texto)) || 
+                       (c.correo && c.correo.toLowerCase().includes(texto)) ||
+                       (c.otro && c.otro.toLowerCase().includes(texto)) ||
+                       (c.ubicacion && c.ubicacion.toLowerCase().includes(texto));
+            });
+            renderizarGrid(filtrados);
+        });
+
+        // --- FORMULARIO (GUARDAR) ---
+        document.getElementById('clienteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btnSubmit = document.getElementById('btnSubmitForm');
+            const textoOriginal = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            btnSubmit.disabled = true;
+
+            const datos = {
+                nombre: document.getElementById('nombre').value,
+                tipo: document.getElementById('tipo').value,
+                ubicacion: document.getElementById('ubicacion').value,
+                direccion: document.getElementById('direccion').value,
+                correo: document.getElementById('correo').value,
+                telefono: document.getElementById('telefono').value,
+                otro: document.getElementById('otro').value, // <--- Aquí tomamos el nuevo campo
+                descripcion: document.getElementById('descripcion').value
+            };
+
+            const { error } = await clienteSupabase.from('clientes').insert([datos]);
+            
+            btnSubmit.innerHTML = textoOriginal;
+            btnSubmit.disabled = false;
+
+            if (error) {
+                alert('Error al guardar el cliente: ' + error.message);
+            } else {
+                alert('¡Cliente guardado con éxito!');
+                mostrarListado();
+                cargarClientes(); 
+            }
+        });
+
+        // Iniciar
+        cargarClientes();
+    </script>
+</body>
+</html>
