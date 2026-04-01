@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+        if (localStorage.getItem('sesion_activa') !== 'true') { window.location.replace('index.html'); }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Procesos - Servinca</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ============================== */
+        /* --- Estilos Base (Púrpura) --- */
+        /* ============================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #f5f3ff; color: #111827; padding: 30px 20px; min-height: 100vh; line-height: 1.5;}
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .oculto { display: none !important; }
+
+        /* --- Barra de Navegación --- */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 15px 30px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px; border: 1px solid #ede9fe;
+        }
+        .nav-links a { text-decoration: none; font-weight: 600; font-size: 15px; margin-right: 25px; color: #64748b; transition: color 0.3s; }
+        .nav-links a:hover { color: #8b5cf6; }
+        .nav-links a.active { color: #6d28d9; border-bottom: 2px solid #6d28d9; padding-bottom: 5px; }
+        .btn-salir { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+
+        /* --- VISTA 1: DIRECTORIO --- */
+        .header-section {
+            text-align: center; background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 40px; border: 1px solid #ede9fe;
+        }
+        .header-section h1 { font-size: 34px; margin-bottom: 10px; background: linear-gradient(90deg, #4c1d95, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-section p { color: #6b7280; font-size: 16px; margin-bottom: 25px; }
+
+        .search-container { position: relative; max-width: 500px; margin: 0 auto 25px auto; }
+        .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #8b5cf6; font-size: 18px; }
+        .search-box { width: 100%; padding: 15px 20px 15px 50px; border: 1px solid #ddd6fe; border-radius: 50px; font-size: 15px; outline: none; transition: 0.3s; }
+        .search-box:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
+
+        .btn-purpura {
+            display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px;
+            background: linear-gradient(90deg, #6d28d9, #8b5cf6); color: white;
+            border: none; border-radius: 50px; font-weight: 600; font-size: 15px;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        .btn-purpura:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4); }
+
+        /* --- Tarjetas Estilo Procesos --- */
+        .grid-procesos { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+        
+        .card {
+            background: #ffffff; border-radius: 16px; padding: 35px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            transition: all 0.4s; border: 1px solid #f5f3ff; position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .card:hover { transform: translateY(-5px); border-color: #8b5cf6; box-shadow: 0 15px 30px rgba(0,0,0,0.06); }
+        .card::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, #4c1d95, #8b5cf6); transform: scaleX(0); transition: 0.3s ease;
+        }
+        .card:hover::after { transform: scaleX(1); }
+
+        .card-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-title { font-size: 19px; color: #111827; margin-bottom: 6px; line-height: 1.3; }
+        .card-desc { font-size: 14px; color: #4b5563; margin-bottom: 20px; flex-grow: 1; }
+
+        .badge { padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+        .badge-status { padding: 5px 12px; border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        
+        /* Colores dinámicos para el estatus */
+        .status-participo { background: #dcfce3; color: #15803d; border: 1px solid #bbf7d0; }
+        .status-no-participo { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .status-espera { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .status-desierto { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+        .status-otro { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+
+        .card-details { border-top: 1px solid #f5f3ff; padding-top: 20px; margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;}
+        .detail-item { font-size: 13px; color: #4b5563; display: flex; flex-direction: column; gap: 2px; }
+        .detail-item strong { color: #1f2937; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #8b5cf6; }
+
+        .card-actions { display: flex; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #f5f3ff; }
+        .action-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-delete { background-color: #fef2f2; color: #dc2626; }
+        .btn-delete:hover { background-color: #fee2e2; }
+
+        /* --- VISTA 2: FORMULARIO --- */
+        .form-container { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: 1px solid #ede9fe; max-width: 800px; margin: 0 auto; }
+        .btn-volver { display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-weight: 600; cursor: pointer; border: none; background: none; font-size: 15px; margin-bottom: 20px; }
+        .btn-volver:hover { color: #6d28d9; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 1px solid #d1d5db; border-radius: 10px; font-family: 'Inter'; font-size: 14px; background: #f9fafb; outline: none; transition: 0.3s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #8b5cf6; background: white; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="navbar">
+            <div class="nav-links">
+                <a href="directorio.html"><i class="fas fa-building"></i>  Directorio Empresa</a>
+                <a href="clientes.html"><i class="fas fa-users"></i> DIrectorio Clientes</a>
+                <a href="#" class="active"><i class="fas fa-project-diagram"></i> Procesos</a>
+           <a href="agenda.html"><i class="fas fa-calendar-alt"></i> Agenda</a>
+            </div>
+            <button onclick="cerrarSesion()" class="btn-salir"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+
+        <div id="vista-listado">
+            <div class="header-section">
+                <h1>Control de Procesos</h1>
+                <p>Gestiona las adjudicaciones, procesos públicos y sus fechas de ejecución.</p>
+                
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="buscador" class="search-box" >
+                </div>
+                
+                <button onclick="mostrarFormulario()" class="btn-purpura">
+                    <i class="fas fa-plus-circle"></i> Nuevo Proceso
+                </button>
+            </div>
+
+            <div class="grid-procesos" id="gridProcesos">
+                </div>
+        </div>
+
+        <div id="vista-formulario" class="oculto">
+            <div class="form-container">
+                <button onclick="mostrarListado()" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver al listado</button>
+                
+                <h2 style="color: #4c1d95; font-size: 28px; margin-bottom: 25px; text-align: center;">Registrar Proceso</h2>
+                
+                <form id="procesoForm" class="form-grid">
+                    
+                    <div class="form-group full-width">
+                        <label>Descripción del Proceso</label>
+                        <textarea id="descripcion" ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Operadores</label>
+                        <input type="text" id="operadores" >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Número de Proceso</label>
+                        <input type="text" id="numero" >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tipo de Proceso</label>
+                        <select id="tipo">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="Proceso Público">Proceso Público</option>
+                            <option value="Adjudicación">Adjudicación</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estatus</label>
+                        <select id="estatus" onchange="verificarEstatus()">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="Participó">Participó</option>
+                            <option value="No participó">No participó</option>
+                            <option value="En espera">En espera</option>
+                            <option value="Desierto">Desierto</option>
+                            <option value="Otro">Otro (Especificar)</option>
+                        </select>
+                        <input type="text" id="estatus_otro" class="oculto" style="margin-top: 10px;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha de Inicio</label>
+                        <input type="date" id="fecha_inicio">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha Tope</label>
+                        <input type="date" id="fecha_tope">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha Final</label>
+                        <input type="date" id="fecha_final">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Comentario</label>
+                        <textarea id="comentario" ></textarea>
+                    </div>
+                    
+                    <div class="form-group full-width" style="margin-top: 10px;">
+                        <button type="submit" id="btnSubmitForm" class="btn-purpura" style="width: 100%; justify-content: center; padding: 16px;">
+                            <i class="fas fa-save"></i> Guardar Proceso
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. Inicializar Supabase
+        const supabaseUrl = 'https://siifkwdmyjycvxaakeqe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWZrd2RteWp5Y3Z4YWFrZXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODIyOTIsImV4cCI6MjA5MDQ1ODI5Mn0.uxXL_1BZv0XNC4tqX-lnxYy7VLzwF0qOgJIio08JpOc';
+        const clienteSupabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let bdProcesos = [];
+
+        // --- FUNCIONES VISUALES ---
+        function mostrarFormulario() {
+            document.getElementById('vista-listado').classList.add('oculto');
+            document.getElementById('vista-formulario').classList.remove('oculto');
+        }
+
+        function mostrarListado() {
+            document.getElementById('vista-formulario').classList.add('oculto');
+            document.getElementById('vista-listado').classList.remove('oculto');
+            document.getElementById('procesoForm').reset();
+            document.getElementById('estatus_otro').classList.add('oculto'); // Ocultar campo 'Otro' al resetear
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('sesion_activa');
+            window.location.href = 'index.html';
+        }
+
+        // Lógica para mostrar/ocultar el campo "Otro" en el estatus
+        function verificarEstatus() {
+            const select = document.getElementById('estatus');
+            const inputOtro = document.getElementById('estatus_otro');
+            if (select.value === 'Otro') {
+                inputOtro.classList.remove('oculto');
+            } else {
+                inputOtro.classList.add('oculto');
+                inputOtro.value = ''; // Limpiar si cambian de opinión
+            }
+        }
+
+        // Para formatear fechas de YYYY-MM-DD a DD/MM/YYYY
+        function formatearFecha(fechaStr) {
+            if (!fechaStr) return '-';
+            const partes = fechaStr.split('-');
+            if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            return fechaStr;
+        }
+
+        // --- LÓGICA DE DATOS Y TARJETAS ---
+        async function cargarProcesos() {
+            const { data, error } = await clienteSupabase.from('procesos').select('*').order('created_at', { ascending: false });
+            if (!error) {
+                bdProcesos = data;
+                renderizarGrid(bdProcesos);
+            } else {
+                console.error(error);
+            }
+        }
+
+        function renderizarGrid(procesos) {
+            const grid = document.getElementById('gridProcesos');
+            grid.innerHTML = '';
+
+            if(procesos.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #6b7280; border: 2px dashed #ddd6fe; border-radius: 16px;">No hay procesos registrados.</div>';
+                return;
+            }
+
+            procesos.forEach((p) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // Determinar color del estatus
+                let claseStatus = 'status-otro';
+                let estatusMostrar = p.estatus || 'Sin estatus';
+                if(p.estatus === 'Participó') claseStatus = 'status-participo';
+                else if(p.estatus === 'No participó') claseStatus = 'status-no-participo';
+                else if(p.estatus === 'En espera') claseStatus = 'status-espera';
+                else if(p.estatus === 'Desierto') claseStatus = 'status-desierto';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div style="flex:1; padding-right:15px;">
+                            <span class="badge" style="margin-bottom:8px; display:inline-block;"># ${p.numero || 'S/N'}</span>
+                            <h3 class="card-title">${p.descripcion || 'Proceso sin descripción'}</h3>
+                            <div style="font-size: 13px; color: #6d28d9; font-weight: 600;">${p.tipo || '-'}</div>
+                        </div>
+                        <span class="badge-status ${claseStatus}">${estatusMostrar}</span>
+                    </div>
+                    
+                    <p class="card-desc"><strong>Operadores:</strong> ${p.operadores || 'No especificado'}<br><strong>Comentario:</strong> ${p.comentario || 'Sin comentarios.'}</p>
+                    
+                    <div class="card-details">
+                        <div class="detail-item"><strong><i class="far fa-calendar-play"></i> Inicio</strong> ${formatearFecha(p.fecha_inicio)}</div>
+                        <div class="detail-item"><strong><i class="far fa-calendar-times"></i> Tope</strong> ${formatearFecha(p.fecha_tope)}</div>
+                        <div class="detail-item" style="grid-column: 1/-1; border-top: 1px dashed #ede9fe; padding-top: 8px;">
+                            <strong><i class="far fa-calendar-check"></i> Final</strong> ${formatearFecha(p.fecha_final)}
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button onclick="eliminarProceso(${p.id})" class="action-btn btn-delete">
+                            <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function eliminarProceso(id) {
+            if(confirm(`¿Eliminar este proceso definitivamente?`)) {
+                const { error } = await clienteSupabase.from('procesos').delete().eq('id', id);
+                if(error) alert('Error al eliminar');
+                else {
+                    bdProcesos = bdProcesos.filter(p => p.id !== id);
+                    renderizarGrid(bdProcesos);
+                }
+            }
+        }
+
+        // --- BÚSQUEDA ---
+        document.getElementById('buscador').addEventListener('input', (e) => {
+            const texto = e.target.value.toLowerCase();
+            const filtrados = bdProcesos.filter(p => {
+                return (p.descripcion && p.descripcion.toLowerCase().includes(texto)) || 
+                       (p.numero && p.numero.toLowerCase().includes(texto)) ||
+                       (p.operadores && p.operadores.toLowerCase().includes(texto)) ||
+                       (p.estatus && p.estatus.toLowerCase().includes(texto));
+            });
+            renderizarGrid(filtrados);
+        });
+
+        // --- FORMULARIO (GUARDAR) ---
+        document.getElementById('procesoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btnSubmit = document.getElementById('btnSubmitForm');
+            const textoOriginal = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            btnSubmit.disabled = true;
+
+            // Determinar qué estatus guardar
+            let estatusFinal = document.getElementById('estatus').value;
+            if (estatusFinal === 'Otro') {
+                estatusFinal = document.getElementById('estatus_otro').value;
+            }
+
+            const datos = {
+                descripcion: document.getElementById('descripcion').value,
+                operadores: document.getElementById('operadores').value,
+                tipo: document.getElementById('tipo').value,
+                numero: document.getElementById('numero').value,
+                fecha_inicio: document.getElementById('fecha_inicio').value || null, // Guardar null si está vacío
+                fecha_tope: document.getElementById('fecha_tope').value || null,
+                fecha_final: document.getElementById('fecha_final').value || null,
+                estatus: estatusFinal,
+                comentario: document.getElementById('comentario').value
+            };
+
+            const { error } = await clienteSupabase.from('procesos').insert([datos]);
+            
+            btnSubmit.innerHTML = textoOriginal;
+            btnSubmit.disabled = false;
+
+            if (error) {
+                alert('Error al guardar: ' + error.message);
+            } else {
+                alert('¡Proceso guardado con éxito!');
+                mostrarListado();
+                cargarProcesos(); 
+            }
+        });
+
+        // Iniciar
+        cargarProcesos();
+    </script>
+</body>
+</html>

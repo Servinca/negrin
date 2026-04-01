@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+        if (localStorage.getItem('sesion_activa') !== 'true') { window.location.replace('index.html'); }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda y Productividad - Servinca</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ============================== */
+        /* --- Estilos Base (Ámbar) --- */
+        /* ============================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #fffbeb; color: #111827; padding: 30px 20px; min-height: 100vh; line-height: 1.5;}
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .oculto { display: none !important; }
+
+        /* --- Barra de Navegación --- */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 15px 30px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px; border: 1px solid #fef3c7;
+        }
+        .nav-links a { text-decoration: none; font-weight: 600; font-size: 15px; margin-right: 20px; color: #64748b; transition: color 0.3s; }
+        .nav-links a:hover { color: #d97706; }
+        .nav-links a.active { color: #b45309; border-bottom: 2px solid #b45309; padding-bottom: 5px; }
+        .btn-salir { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-salir:hover { background: #fee2e2; }
+
+        /* --- VISTA 1: DIRECTORIO --- */
+        .header-section {
+            text-align: center; background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 40px; border: 1px solid #fef3c7;
+        }
+        .header-section h1 { font-size: 34px; margin-bottom: 10px; background: linear-gradient(90deg, #b45309, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-section p { color: #6b7280; font-size: 16px; margin-bottom: 25px; }
+
+        .search-container { position: relative; max-width: 500px; margin: 0 auto 25px auto; }
+        .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #d97706; font-size: 18px; }
+        .search-box { width: 100%; padding: 15px 20px 15px 50px; border: 1px solid #fde68a; border-radius: 50px; font-size: 15px; outline: none; transition: 0.3s; }
+        .search-box:focus { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
+
+        .btn-ambar {
+            display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px;
+            background: linear-gradient(90deg, #d97706, #f59e0b); color: white;
+            border: none; border-radius: 50px; font-weight: 600; font-size: 15px;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+        }
+        .btn-ambar:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(217, 119, 6, 0.4); }
+
+        /* --- Tarjetas Estilo Agenda --- */
+        .grid-agenda { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 30px; }
+        
+        .card {
+            background: #ffffff; border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            transition: all 0.3s; border: 1px solid #fffbeb; position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .card:hover { transform: translateY(-5px); border-color: #f59e0b; box-shadow: 0 15px 30px rgba(0,0,0,0.06); }
+        .card::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, #b45309, #f59e0b); transform: scaleX(0); transition: 0.3s ease;
+        }
+        .card:hover::after { transform: scaleX(1); }
+
+        .card-header { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-title { font-size: 19px; color: #111827; margin-bottom: 4px; line-height: 1.3; }
+        
+        /* Etiquetas y Prioridades */
+        .badge-status { padding: 5px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        
+        .prio-alta { color: #dc2626; font-weight: 700; font-size: 12px; }
+        .prio-media { color: #d97706; font-weight: 700; font-size: 12px; }
+        .prio-baja { color: #059669; font-weight: 700; font-size: 12px; }
+
+        .card-desc { font-size: 13px; color: #4b5563; margin-bottom: 15px; flex-grow: 1; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #f3f4f6;}
+
+        .card-details { border-top: 1px solid #fef3c7; padding-top: 15px; margin-top: auto; display: grid; grid-template-columns: 1fr; gap: 8px;}
+        .detail-item { font-size: 13px; color: #4b5563; display: flex; align-items: center; gap: 8px; }
+        .detail-item i { color: #d97706; width: 16px; text-align: center; }
+        .detail-item strong { color: #1f2937; }
+
+        .card-actions { display: flex; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #fef3c7; }
+        .action-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 5px; text-decoration: none;}
+        .btn-delete { background-color: #fef2f2; color: #dc2626; }
+        .btn-delete:hover { background-color: #fee2e2; }
+
+        /* --- VISTA 2: FORMULARIO --- */
+        .form-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: 1px solid #fef3c7; max-width: 800px; margin: 0 auto; }
+        .btn-volver { display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-weight: 600; cursor: pointer; border: none; background: none; font-size: 15px; margin-bottom: 20px; }
+        .btn-volver:hover { color: #b45309; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 1px solid #d1d5db; border-radius: 10px; font-family: 'Inter'; font-size: 14px; background: #f9fafb; outline: none; transition: 0.3s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #f59e0b; background: white; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1); }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        
+        .seccion-titulo { grid-column: 1 / -1; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 2px solid #fef3c7; color: #b45309; font-weight: 700; font-family: 'Poppins'; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="navbar">
+            <div class="nav-links">
+                <a href="directorio.html"><i class="fas fa-building"></i> Empresas</a>
+                <a href="clientes.html"><i class="fas fa-users"></i> Clientes</a>
+                <a href="procesos.html"><i class="fas fa-project-diagram"></i> Procesos</a>
+                <a href="#" class="active"><i class="fas fa-calendar-alt"></i> Agenda</a>
+            </div>
+            <button onclick="cerrarSesion()" class="btn-salir"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+
+        <div id="vista-listado">
+            <div class="header-section">
+                <h1>Agenda y Productividad</h1>
+                <p>Controla tus reuniones y actividades diarias.</p>
+                
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="buscador" class="search-box">
+                </div>
+                
+                <button onclick="mostrarFormulario()" class="btn-ambar">
+                    <i class="fas fa-plus-circle"></i> Nueva Actividad / Reunión
+                </button>
+            </div>
+
+            <div class="grid-agenda" id="gridAgenda">
+                </div>
+        </div>
+
+        <div id="vista-formulario" class="oculto">
+            <div class="form-container">
+                <button onclick="mostrarListado()" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a la Agenda</button>
+                
+                <h2 style="color: #b45309; font-size: 26px; margin-bottom: 25px; text-align: center;">Registrar en Agenda</h2>
+                
+                <form id="agendaForm" class="form-grid">
+                    
+                    <div class="seccion-titulo">Datos Generales</div>
+
+                    <div class="form-group full-width">
+                        <label>Título de la Actividad / Reunión</label>
+                        <input type="text" id="titulo">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="tipo">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="Actividad / Tarea">Actividad / Tarea técnica</option>
+                            <option value="Reunión">Reunión</option>
+                            <option value="Hito / Entrega">Hito / Entrega oficial</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Prioridad</label>
+                        <select id="prioridad">
+                            <option value="Baja">🟢 Baja</option>
+                            <option value="Media">🟡 Media</option>
+                            <option value="Alta">🔴 Alta</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estatus</label>
+                        <select id="estatus">
+                            <option value="Pendiente" selected>Pendiente / Programada</option>
+                            <option value="En Curso">En Curso</option>
+                            <option value="Realizada">Realizada</option>
+                            <option value="Reprogramada">Reprogramada</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha Límite / Programada</label>
+                        <input type="date" id="fecha">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Modalidad / Lugar</label>
+                        <input type="text" id="modalidad">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Observaciones</label>
+                        <textarea id="observaciones"></textarea>
+                    </div>
+                    
+                    <div class="form-group full-width" style="margin-top: 10px;">
+                        <button type="submit" id="btnSubmitForm" class="btn-ambar" style="width: 100%; justify-content: center; padding: 16px;">
+                            <i class="fas fa-save"></i> Guardar en Agenda
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. Inicializar Supabase
+        const supabaseUrl = 'https://siifkwdmyjycvxaakeqe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWZrd2RteWp5Y3Z4YWFrZXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODIyOTIsImV4cCI6MjA5MDQ1ODI5Mn0.uxXL_1BZv0XNC4tqX-lnxYy7VLzwF0qOgJIio08JpOc';
+        const clienteSupabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let bdAgenda = [];
+
+        // --- FUNCIONES VISUALES ---
+        function mostrarFormulario() {
+            document.getElementById('vista-listado').classList.add('oculto');
+            document.getElementById('vista-formulario').classList.remove('oculto');
+        }
+
+        function mostrarListado() {
+            document.getElementById('vista-formulario').classList.add('oculto');
+            document.getElementById('vista-listado').classList.remove('oculto');
+            document.getElementById('agendaForm').reset();
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('sesion_activa');
+            window.location.href = 'index.html';
+        }
+
+        function formatearFecha(fechaStr) {
+            if (!fechaStr) return 'Sin fecha';
+            const partes = fechaStr.split('-');
+            if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            return fechaStr;
+        }
+
+        // --- LÓGICA DE DATOS Y TARJETAS ---
+        async function cargarAgenda() {
+            const { data, error } = await clienteSupabase.from('agenda').select('*').order('created_at', { ascending: false });
+            if (!error) {
+                bdAgenda = data;
+                renderizarGrid(bdAgenda);
+            } else {
+                console.error(error);
+            }
+        }
+
+        function renderizarGrid(agendaItems) {
+            const grid = document.getElementById('gridAgenda');
+            grid.innerHTML = '';
+
+            if(agendaItems.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #6b7280; border: 2px dashed #fde68a; border-radius: 16px;">Agenda vacía. ¡Aprovecha para descansar o planificar!</div>';
+                return;
+            }
+
+            agendaItems.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // Determinar color de estatus
+                let claseStatus = 'status-otro';
+                if(item.estatus === 'Realizada') claseStatus = 'background: #dcfce3; color: #15803d; border: 1px solid #bbf7d0;';
+                else if(item.estatus === 'Cancelada') claseStatus = 'background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;';
+                else if(item.estatus === 'En Curso') claseStatus = 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;';
+                else if(item.estatus === 'Pendiente') claseStatus = 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;';
+                else claseStatus = 'background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;';
+
+                // Icono y color de Prioridad
+                let iconPrio = '';
+                if(item.prioridad === 'Alta') iconPrio = '<span class="prio-alta"><i class="fas fa-arrow-up"></i> Alta</span>';
+                else if(item.prioridad === 'Media') iconPrio = '<span class="prio-media"><i class="fas fa-minus"></i> Media</span>';
+                else iconPrio = '<span class="prio-baja"><i class="fas fa-arrow-down"></i> Baja</span>';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div style="flex:1; padding-right:15px;">
+                            <h3 class="card-title">${item.titulo || 'Sin Título'}</h3>
+                            <div style="font-size: 12px; color: #6b7280; display:flex; gap:10px; margin-top:5px;">
+                                <span><i class="fas fa-tag"></i> ${item.tipo || 'Actividad'}</span>
+                                ${iconPrio}
+                            </div>
+                        </div>
+                        <span class="badge-status" style="${claseStatus}">${item.estatus || 'Pendiente'}</span>
+                    </div>
+                    
+                    <div class="card-desc">
+                        <strong>Observaciones:</strong><br>
+                        ${item.observaciones || 'Sin observaciones.'}
+                    </div>
+                    
+                    <div class="card-details">
+                        <div class="detail-item"><i class="far fa-calendar-alt"></i> <strong>Fecha:</strong> ${formatearFecha(item.fecha)}</div>
+                        <div class="detail-item"><i class="fas fa-map-marker-alt"></i> <strong>Modalidad:</strong> ${item.modalidad || 'No definida'}</div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button onclick="eliminarAgenda(${item.id})" class="action-btn btn-delete">
+                            <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function eliminarAgenda(id) {
+            if(confirm(`¿Borrar esta actividad de la agenda?`)) {
+                const { error } = await clienteSupabase.from('agenda').delete().eq('id', id);
+                if(error) alert('Error al eliminar');
+                else {
+                    bdAgenda = bdAgenda.filter(p => p.id !== id);
+                    renderizarGrid(bdAgenda);
+                }
+            }
+        }
+
+        // --- BÚSQUEDA ---
+        document.getElementById('buscador').addEventListener('input', (e) => {
+            const texto = e.target.value.toLowerCase();
+            const filtrados = bdAgenda.filter(item => {
+                return (item.titulo && item.titulo.toLowerCase().includes(texto)) || 
+                       (item.estatus && item.estatus.toLowerCase().includes(texto));
+            });
+            renderizarGrid(filtrados);
+        });
+
+        // --- FORMULARIO (GUARDAR) ---
+        document.getElementById('agendaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btnSubmit = document.getElementById('btnSubmitForm');
+            const textoOriginal = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            btnSubmit.disabled = true;
+
+            const datos = {
+                titulo: document.getElementById('titulo').value,
+                tipo: document.getElementById('tipo').value,
+                prioridad: document.getElementById('prioridad').value,
+                estatus: document.getElementById('estatus').value,
+                fecha: document.getElementById('fecha').value, 
+                modalidad: document.getElementById('modalidad').value,
+                observaciones: document.getElementById('observaciones').value
+            };
+
+            const { error } = await clienteSupabase.from('agenda').insert([datos]);
+            
+            btnSubmit.innerHTML = textoOriginal;
+            btnSubmit.disabled = false;
+
+            if (error) {
+                alert('Error al guardar: ' + error.message);
+            } else {
+                alert('¡Guardado en la agenda con éxito!');
+                mostrarListado();
+                cargarAgenda(); 
+            }
+        });
+
+        // Iniciar
+        cargarAgenda();
+    </script>
+</body>
+</html>

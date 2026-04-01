@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -132,12 +133,6 @@
             transform: translateY(-1px);
         }
 
-        /* Validación visual sutil para errores tipográficos en correo/teléfono */
-        input:not(:placeholder-shown):invalid {
-            border-color: #ef4444;
-            background-color: #fef2f2;
-        }
-
         textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
 
         /* ============================== */
@@ -197,12 +192,12 @@
             
             <div class="form-group full-width">
                 <label for="nombre">Nombre de la Empresa</label>
-                <input type="text" id="nombre" required>
+                <input type="text" id="nombre">
             </div>
             
             <div class="form-group">
                 <label for="tipo">Clasificación</label>
-                <select id="tipo" required>
+                <select id="tipo">
                     <option value="" disabled selected>Seleccione un tipo...</option>
                     <option value="Fabricante">Fabricante</option>
                     <option value="Distribuidora">Distribuidora</option>
@@ -212,32 +207,32 @@
 
             <div class="form-group">
                 <label for="ubicacion">Ubicación (Ciudad/Estado)</label>
-                <input type="text" id="ubicacion" required>
+                <input type="text" id="ubicacion">
             </div>
             
             <div class="form-group full-width">
                 <label for="direccion">Dirección Física Exacta</label>
-                <input type="text" id="direccion" required>
+                <input type="text" id="direccion">
             </div>
 
             <div class="form-group">
                 <label for="correo">Correo Electrónico</label>
-                <input type="email" id="correo" required>
+                <input type="email" id="correo">
             </div>
 
             <div class="form-group">
                 <label for="telefono">Número Telefónico</label>
-                <input type="tel" id="telefono" pattern="[\+0-9\s\-]+" title="Solo se permiten números, espacios y los signos + o -" required>
+                <input type="tel" id="telefono">
             </div>
 
             <div class="form-group full-width">
                 <label for="otro">Otro (Dato Adicional)</label>
-                <input type="text" id="otro" placeholder="Especificar información adicional..." required>
+                <input type="text" id="otro" placeholder="Especificar información adicional...">
             </div>
 
             <div class="form-group full-width">
                 <label for="descripcion">Descripción / Notas Adicionales (Opcional)</label>
-                <textarea id="descripcion" ></textarea>
+                <textarea id="descripcion"></textarea>
             </div>
             
             <div class="form-group full-width">
@@ -265,7 +260,7 @@
             btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando datos...';
             btnSubmit.disabled = true;
 
-            // 3. Obtener los valores (¡Agregamos el campo "otro" aquí!)
+            // 3. Obtener los valores 
             const nombre = document.getElementById('nombre').value;
             const descripcion = document.getElementById('descripcion').value;
             const ubicacion = document.getElementById('ubicacion').value;
@@ -275,7 +270,7 @@
             const telefono = document.getElementById('telefono').value;
             const otro = document.getElementById('otro').value;
 
-            // 4. Insertar en Supabase (¡Añadimos "otro" a la inserción!)
+            // 4. Insertar en Supabase
             const { error } = await cliente
                 .from('empresas')
                 .insert([{ nombre, descripcion, ubicacion, tipo, direccion, correo, telefono, otro }]);
