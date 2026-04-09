@@ -37,14 +37,27 @@
         .header-section {
             text-align: center; background: white; padding: 40px; border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 40px; border: 1px solid #fef3c7;
+            position: relative;
         }
         .header-section h1 { font-size: 34px; margin-bottom: 10px; background: linear-gradient(90deg, #b45309, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .header-section p { color: #6b7280; font-size: 16px; margin-bottom: 25px; }
 
-        .search-container { position: relative; max-width: 500px; margin: 0 auto 25px auto; }
+        .search-container { position: relative; max-width: 600px; margin: 0 auto 15px auto; }
         .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #d97706; font-size: 18px; }
         .search-box { width: 100%; padding: 15px 20px 15px 50px; border: 1px solid #fde68a; border-radius: 50px; font-size: 15px; outline: none; transition: 0.3s; }
         .search-box:focus { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
+
+        /* Filtros y Controles de Vista */
+        .filtros-y-vistas { display: flex; justify-content: space-between; align-items: center; max-width: 900px; margin: 0 auto 25px auto; flex-wrap: wrap; gap: 15px; }
+        .filtros-container { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;}
+        .filtro-select { padding: 10px 15px; border: 1px solid #fde68a; border-radius: 50px; font-size: 13px; font-family: 'Inter'; outline: none; color: #4b5563; background: white; transition: 0.3s; cursor: pointer; }
+        .filtro-select:focus { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
+        .btn-limpiar { padding: 10px 15px; border: 1px solid #fecaca; border-radius: 50px; font-size: 13px; font-weight: 600; color: #dc2626; background: #fef2f2; cursor: pointer; transition: 0.2s; }
+        .btn-limpiar:hover { background: #fee2e2; }
+
+        .view-toggle { display: flex; gap: 5px; background: #fef3c7; padding: 5px; border-radius: 50px; }
+        .toggle-btn { padding: 8px 16px; border: none; background: transparent; color: #b45309; border-radius: 50px; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        .toggle-btn.active { background: white; color: #d97706; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: 600; }
 
         .btn-ambar {
             display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px;
@@ -56,7 +69,8 @@
 
         /* --- Tarjetas Estilo Agenda --- */
         .grid-agenda { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 30px; }
-        
+        .lista-agenda { display: block; overflow-x: auto; } /* Para que la tabla funcione bien */
+
         .card {
             background: #ffffff; border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);
             transition: all 0.3s; border: 1px solid #fffbeb; position: relative; overflow: hidden;
@@ -73,7 +87,7 @@
         .card-title { font-size: 19px; color: #111827; margin-bottom: 4px; line-height: 1.3; }
         
         /* Etiquetas y Prioridades */
-        .badge-status { padding: 5px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-status { padding: 5px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;}
         
         .prio-alta { color: #dc2626; font-weight: 700; font-size: 12px; }
         .prio-media { color: #d97706; font-weight: 700; font-size: 12px; }
@@ -92,6 +106,19 @@
         .btn-edit:hover { background-color: #fef3c7; }
         .btn-delete { background-color: #fef2f2; color: #dc2626; }
         .btn-delete:hover { background-color: #fee2e2; }
+
+        /* --- ESTILOS DE LA VISTA DE TABLA (LISTADO) --- */
+        .tabla-agenda { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #fef3c7; }
+        .tabla-agenda thead { background: #fffbeb; }
+        .tabla-agenda th { padding: 15px; text-align: left; font-size: 13px; color: #b45309; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; border-bottom: 2px solid #fde68a;}
+        .tabla-agenda td { padding: 15px; border-bottom: 1px solid #fef3c7; font-size: 14px; color: #4b5563; vertical-align: middle;}
+        .tabla-agenda tr:hover { background-color: #fefcf5; }
+        .tabla-acciones-mini { display: flex; gap: 8px; }
+        .btn-mini { padding: 8px; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; color: white;}
+        .btn-mini.edit { background: #f59e0b; }
+        .btn-mini.edit:hover { background: #d97706; }
+        .btn-mini.delete { background: #ef4444; }
+        .btn-mini.delete:hover { background: #dc2626; }
 
         /* --- VISTA 2: FORMULARIO --- */
         .form-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: 1px solid #fef3c7; max-width: 800px; margin: 0 auto; }
@@ -129,7 +156,36 @@
                 
                 <div class="search-container">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscador" class="search-box">
+                    <input type="text" id="buscador" class="search-box" placeholder="Buscar por título o estatus...">
+                </div>
+
+                <div class="filtros-y-vistas">
+                    <div class="filtros-container">
+                        <select id="filtro-prioridad" class="filtro-select">
+                            <option value="Todos">Todas las prioridades</option>
+                            <option value="Alta">🔴 Prioridad Alta</option>
+                            <option value="Media">🟡 Prioridad Media</option>
+                            <option value="Baja">🟢 Prioridad Baja</option>
+                        </select>
+
+                        <select id="filtro-tipo" class="filtro-select">
+                            <option value="Todos">Todos los tipos</option>
+                            <option value="Actividad / Tarea">Actividad</option>
+                            <option value="Reunión">Reunión</option>
+                            <option value="Hito / Entrega">Entrega oficial</option>
+                        </select>
+
+                        <input type="date" id="filtro-fecha" class="filtro-select" title="Filtrar por fecha">
+                        
+                        <button onclick="limpiarFiltros()" class="btn-limpiar" title="Limpiar Filtros">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
+
+                    <div class="view-toggle">
+                        <button id="btn-vista-tarjetas" class="toggle-btn active" onclick="cambiarModoVista('tarjetas')" title="Ver en Tarjetas"><i class="fas fa-th-large"></i></button>
+                        <button id="btn-vista-lista" class="toggle-btn" onclick="cambiarModoVista('lista')" title="Ver en Lista"><i class="fas fa-list"></i></button>
+                    </div>
                 </div>
                 
                 <button onclick="prepararNuevo()" class="btn-ambar">
@@ -137,8 +193,8 @@
                 </button>
             </div>
 
-            <div class="grid-agenda" id="gridAgenda">
-                </div>
+            <div id="gridAgenda" class="grid-agenda">
+            </div>
         </div>
 
         <div id="vista-formulario" class="oculto">
@@ -219,9 +275,25 @@
         const clienteSupabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let bdAgenda = [];
-        let idAgendaEditando = null; // Controla si creamos o actualizamos
+        let idAgendaEditando = null; 
+        let modoVista = 'tarjetas'; // Por defecto empieza en tarjetas
 
         // --- FUNCIONES VISUALES ---
+        function cambiarModoVista(modo) {
+            modoVista = modo;
+            
+            // Actualizar botones visualmente
+            document.getElementById('btn-vista-tarjetas').classList.toggle('active', modo === 'tarjetas');
+            document.getElementById('btn-vista-lista').classList.toggle('active', modo === 'lista');
+            
+            // Cambiar clase del contenedor para aplicar CSS correcto
+            const grid = document.getElementById('gridAgenda');
+            grid.className = modo === 'tarjetas' ? 'grid-agenda' : 'lista-agenda';
+
+            // Volver a pintar con los filtros actuales
+            aplicarFiltros(); 
+        }
+
         function mostrarFormulario() {
             document.getElementById('vista-listado').classList.add('oculto');
             document.getElementById('vista-formulario').classList.remove('oculto');
@@ -235,21 +307,15 @@
         function prepararNuevo() {
             idAgendaEditando = null;
             document.getElementById('agendaForm').reset();
-            
-            // Textos modo Creación
             document.getElementById('form-titulo').innerText = 'Registrar en Agenda';
             document.getElementById('btnSubmitText').innerText = 'Guardar en Agenda';
-            
             mostrarFormulario();
         }
 
         function editarAgenda(id) {
             idAgendaEditando = id;
-            
-            // Buscar el registro en la memoria
             const item = bdAgenda.find(a => a.id === id);
             
-            // Llenar el formulario
             document.getElementById('titulo').value = item.titulo || '';
             document.getElementById('tipo').value = item.tipo || '';
             document.getElementById('prioridad').value = item.prioridad || 'Media';
@@ -258,10 +324,8 @@
             document.getElementById('modalidad').value = item.modalidad || '';
             document.getElementById('observaciones').value = item.observaciones || '';
 
-            // Textos modo Edición
             document.getElementById('form-titulo').innerText = 'Editar Actividad';
             document.getElementById('btnSubmitText').innerText = 'Actualizar Cambios';
-            
             mostrarFormulario();
         }
 
@@ -277,77 +341,131 @@
             return fechaStr;
         }
 
-        // --- LÓGICA DE DATOS Y TARJETAS ---
+        // --- LÓGICA DE DATOS Y TARJETAS/TABLA ---
         async function cargarAgenda() {
             const { data, error } = await clienteSupabase.from('agenda').select('*').order('created_at', { ascending: false });
             if (!error) {
                 bdAgenda = data;
-                renderizarGrid(bdAgenda);
+                aplicarFiltros(); // Pintar la primera vez usando la función de filtros
             } else {
                 console.error(error);
             }
         }
 
         function renderizarGrid(agendaItems) {
-            const grid = document.getElementById('gridAgenda');
-            grid.innerHTML = '';
+            const contenedor = document.getElementById('gridAgenda');
+            contenedor.innerHTML = '';
 
             if(agendaItems.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #6b7280; border: 2px dashed #fde68a; border-radius: 16px;">Agenda vacía. ¡Aprovecha para descansar o planificar!</div>';
+                contenedor.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #6b7280; border: 2px dashed #fde68a; border-radius: 16px;">No hay actividades que coincidan con tu búsqueda o filtros.</div>';
                 return;
             }
 
-            agendaItems.forEach((item) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // Determinar color de estatus
-                let claseStatus = 'status-otro';
-                if(item.estatus === 'Realizada') claseStatus = 'background: #dcfce3; color: #15803d; border: 1px solid #bbf7d0;';
-                else if(item.estatus === 'Cancelada') claseStatus = 'background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;';
-                else if(item.estatus === 'En Curso') claseStatus = 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;';
-                else if(item.estatus === 'Pendiente') claseStatus = 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;';
-                else claseStatus = 'background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;';
-
-                // Icono y color de Prioridad
-                let iconPrio = '';
-                if(item.prioridad === 'Alta') iconPrio = '<span class="prio-alta"><i class="fas fa-arrow-up"></i> Alta</span>';
-                else if(item.prioridad === 'Media') iconPrio = '<span class="prio-media"><i class="fas fa-minus"></i> Media</span>';
-                else iconPrio = '<span class="prio-baja"><i class="fas fa-arrow-down"></i> Baja</span>';
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div style="flex:1; padding-right:15px;">
-                            <h3 class="card-title">${item.titulo || 'Sin Título'}</h3>
-                            <div style="font-size: 12px; color: #6b7280; display:flex; gap:10px; margin-top:5px;">
-                                <span><i class="fas fa-tag"></i> ${item.tipo || 'Actividad'}</span>
-                                ${iconPrio}
-                            </div>
-                        </div>
-                        <span class="badge-status" style="${claseStatus}">${item.estatus || 'Pendiente'}</span>
-                    </div>
-                    
-                    <div class="card-desc">
-                        <strong>Observaciones:</strong><br>
-                        ${item.observaciones || 'Sin observaciones.'}
-                    </div>
-                    
-                    <div class="card-details">
-                        <div class="detail-item"><i class="far fa-calendar-alt"></i> <strong>Fecha:</strong> ${formatearFecha(item.fecha)}</div>
-                        <div class="detail-item"><i class="fas fa-map-marker-alt"></i> <strong>Modalidad:</strong> ${item.modalidad || 'No definida'}</div>
-                    </div>
-
-                    <div class="card-actions">
-                        <button onclick="editarAgenda(${item.id})" class="action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button onclick="eliminarAgenda(${item.id})" class="action-btn btn-delete">
-                            <i class="fas fa-trash-alt"></i> Eliminar
-                        </button>
-                    </div>
+            // MODO LISTA / TABLA
+            if (modoVista === 'lista') {
+                let tablaHTML = `
+                    <table class="tabla-agenda">
+                        <thead>
+                            <tr>
+                                <th>Título y Tipo</th>
+                                <th>Fecha</th>
+                                <th>Estatus</th>
+                                <th>Prioridad</th>
+                                <th>Lugar</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 `;
-                grid.appendChild(card);
-            });
+
+                agendaItems.forEach((item) => {
+                    let claseStatus = '';
+                    if(item.estatus === 'Realizada') claseStatus = 'background: #dcfce3; color: #15803d; border: 1px solid #bbf7d0;';
+                    else if(item.estatus === 'Cancelada') claseStatus = 'background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;';
+                    else if(item.estatus === 'En Curso') claseStatus = 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;';
+                    else if(item.estatus === 'Pendiente') claseStatus = 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;';
+                    else claseStatus = 'background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;';
+
+                    let iconPrio = '';
+                    if(item.prioridad === 'Alta') iconPrio = '<span class="prio-alta"><i class="fas fa-arrow-up"></i> Alta</span>';
+                    else if(item.prioridad === 'Media') iconPrio = '<span class="prio-media"><i class="fas fa-minus"></i> Media</span>';
+                    else iconPrio = '<span class="prio-baja"><i class="fas fa-arrow-down"></i> Baja</span>';
+
+                    tablaHTML += `
+                        <tr>
+                            <td>
+                                <strong style="color:#111827; font-size:15px;">${item.titulo || 'Sin Título'}</strong><br>
+                                <span style="font-size: 12px; color: #6b7280;"><i class="fas fa-tag"></i> ${item.tipo || 'Actividad'}</span>
+                            </td>
+                            <td><strong>${formatearFecha(item.fecha)}</strong></td>
+                            <td><span class="badge-status" style="${claseStatus}">${item.estatus || 'Pendiente'}</span></td>
+                            <td>${iconPrio}</td>
+                            <td>${item.modalidad || '-'}</td>
+                            <td>
+                                <div class="tabla-acciones-mini">
+                                    <button onclick="editarAgenda(${item.id})" class="btn-mini edit" title="Editar"><i class="fas fa-edit"></i></button>
+                                    <button onclick="eliminarAgenda(${item.id})" class="btn-mini delete" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tablaHTML += `</tbody></table>`;
+                contenedor.innerHTML = tablaHTML;
+            } 
+            // MODO TARJETAS (Por defecto)
+            else {
+                agendaItems.forEach((item) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    let claseStatus = 'status-otro';
+                    if(item.estatus === 'Realizada') claseStatus = 'background: #dcfce3; color: #15803d; border: 1px solid #bbf7d0;';
+                    else if(item.estatus === 'Cancelada') claseStatus = 'background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;';
+                    else if(item.estatus === 'En Curso') claseStatus = 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;';
+                    else if(item.estatus === 'Pendiente') claseStatus = 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;';
+                    else claseStatus = 'background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;';
+
+                    let iconPrio = '';
+                    if(item.prioridad === 'Alta') iconPrio = '<span class="prio-alta"><i class="fas fa-arrow-up"></i> Alta</span>';
+                    else if(item.prioridad === 'Media') iconPrio = '<span class="prio-media"><i class="fas fa-minus"></i> Media</span>';
+                    else iconPrio = '<span class="prio-baja"><i class="fas fa-arrow-down"></i> Baja</span>';
+
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div style="flex:1; padding-right:15px;">
+                                <h3 class="card-title">${item.titulo || 'Sin Título'}</h3>
+                                <div style="font-size: 12px; color: #6b7280; display:flex; gap:10px; margin-top:5px;">
+                                    <span><i class="fas fa-tag"></i> ${item.tipo || 'Actividad'}</span>
+                                    ${iconPrio}
+                                </div>
+                            </div>
+                            <span class="badge-status" style="${claseStatus}">${item.estatus || 'Pendiente'}</span>
+                        </div>
+                        
+                        <div class="card-desc">
+                            <strong>Observaciones:</strong><br>
+                            ${item.observaciones || 'Sin observaciones.'}
+                        </div>
+                        
+                        <div class="card-details">
+                            <div class="detail-item"><i class="far fa-calendar-alt"></i> <strong>Fecha:</strong> ${formatearFecha(item.fecha)}</div>
+                            <div class="detail-item"><i class="fas fa-map-marker-alt"></i> <strong>Modalidad:</strong> ${item.modalidad || 'No definida'}</div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button onclick="editarAgenda(${item.id})" class="action-btn btn-edit">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="eliminarAgenda(${item.id})" class="action-btn btn-delete">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
+                        </div>
+                    `;
+                    contenedor.appendChild(card);
+                });
+            }
         }
 
         async function eliminarAgenda(id) {
@@ -356,20 +474,44 @@
                 if(error) alert('Error al eliminar');
                 else {
                     bdAgenda = bdAgenda.filter(p => p.id !== id);
-                    renderizarGrid(bdAgenda);
+                    aplicarFiltros(); // Repintamos usando los filtros/vista actuales
                 }
             }
         }
 
-        // --- BÚSQUEDA ---
-        document.getElementById('buscador').addEventListener('input', (e) => {
-            const texto = e.target.value.toLowerCase();
+        // --- SISTEMA DE FILTROS ---
+        function aplicarFiltros() {
+            const textoBusqueda = document.getElementById('buscador').value.toLowerCase();
+            const filtroPrioridad = document.getElementById('filtro-prioridad').value;
+            const filtroTipo = document.getElementById('filtro-tipo').value;
+            const filtroFecha = document.getElementById('filtro-fecha').value;
+
             const filtrados = bdAgenda.filter(item => {
-                return (item.titulo && item.titulo.toLowerCase().includes(texto)) || 
-                       (item.estatus && item.estatus.toLowerCase().includes(texto));
+                const coincideTexto = (item.titulo && item.titulo.toLowerCase().includes(textoBusqueda)) || 
+                                      (item.estatus && item.estatus.toLowerCase().includes(textoBusqueda));
+                const coincidePrioridad = (filtroPrioridad === 'Todos') || (item.prioridad === filtroPrioridad);
+                const coincideTipo = (filtroTipo === 'Todos') || (item.tipo === filtroTipo);
+                const coincideFecha = (!filtroFecha) || (item.fecha === filtroFecha);
+
+                return coincideTexto && coincidePrioridad && coincideTipo && coincideFecha;
             });
+
             renderizarGrid(filtrados);
-        });
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('buscador').value = '';
+            document.getElementById('filtro-prioridad').value = 'Todos';
+            document.getElementById('filtro-tipo').value = 'Todos';
+            document.getElementById('filtro-fecha').value = '';
+            aplicarFiltros();
+        }
+
+        document.getElementById('buscador').addEventListener('input', aplicarFiltros);
+        document.getElementById('filtro-prioridad').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtro-fecha').addEventListener('change', aplicarFiltros);
+
 
         // --- FORMULARIO (GUARDAR / ACTUALIZAR) ---
         document.getElementById('agendaForm').addEventListener('submit', async (e) => {
@@ -396,16 +538,13 @@
             let operacionError;
 
             if (idAgendaEditando) {
-                // Modo Edición: Actualizar registro
                 const { error } = await clienteSupabase.from('agenda').update(datos).eq('id', idAgendaEditando);
                 operacionError = error;
             } else {
-                // Modo Creación: Insertar nuevo
                 const { error } = await clienteSupabase.from('agenda').insert([datos]);
                 operacionError = error;
             }
             
-            // Restaurar botón
             btnSubmit.innerHTML = iconHTML + '<span id="btnSubmitText">' + textoOriginal + '</span>';
             btnSubmit.disabled = false;
 
